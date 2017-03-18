@@ -52,7 +52,7 @@ def signup(new_email, new_uname, new_passwd):
 
 if __name__ == '__main__':
 	while(1):
-    	#print "Choose Login or Signup:"
+		print "Choose Login or Signup:"
 		choice = raw_input()
 		if(choice == "Login"):
 			if(loginvar==0):
@@ -73,8 +73,9 @@ if __name__ == '__main__':
 					ans = raw_input()
 					if ans=='y':
 						sys.exit()
+
 		elif(choice == "Signup"):
-    			print "Please enter your email"
+			print "Please enter your email"
 			email = raw_input()
 			print "Please enter your username:"
 			username = raw_input()
