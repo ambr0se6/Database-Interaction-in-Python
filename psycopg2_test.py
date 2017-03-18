@@ -9,25 +9,42 @@ except:
 cur = conn.cursor()
 
 loginvar = 0
-def login(uname, passwd):
-	global loginvar
-	myquery = """SELECT * FROM "User" WHERE username='{%s}' AND password='{%s}';"""
+provar = 0
 
-	cur.execute(myquery % (uname,passwd))
+def login(uname, passwd):
+	global loginvar, provar
+	userpasswordq = """SELECT * FROM "User" WHERE username='{%s}' AND password='{%s}';"""
+	prouserq = """SELECT * FROM "prouser" WHERE username='{%s}';"""
+
+	cur.execute(userpasswordq % (uname,passwd))
 	try:
 		cur.fetchone()[0]
 		loginvar = 1
-		print "You have been logged in!"	
-	except Exception as e:
+		print "You have been logged in!"
+		cur.execute(prouserq %(uname))
+		try:
+			cur.fetchone()[0]
+			provar = 1
+		except:
+			pass
+
+	except:
 		print "Invalid username/password. Please try again."
 
+	print provar
+
+
 def logout():
-	global loginvar
+	global loginvar, provar
 	if(loginvar==0):
 		print "You are already logged out."
 	else:
 		loginvar = 0
+		provar = 0
 		print "You have successfully logged out."
+
+def signup(new_uname, new_passwd):
+	myquery = """fdsf sd fdsf"""
 
 if __name__ == '__main__':
 	while(1):
@@ -37,6 +54,7 @@ if __name__ == '__main__':
 			print "Please enter your password:"
 			password = raw_input()
 			login(username,password)
+
 
 		elif(loginvar==1):
 			print "Would you like to log out? [y/n]"
