@@ -44,8 +44,9 @@ def logout():
 		print "You have successfully logged out."
 
 def signup(new_email, new_uname, new_passwd):
-	addUsrPassq = """INSERT INTO "User" (username, password, email) VALUES ({%s}, {%s}, {%s}); """
+	addUsrPassq = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}'); """
 	cur.execute(addUsrPassq % (new_uname, new_passwd, new_email))
+	conn.commit()
 
 
 	
