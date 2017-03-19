@@ -1,4 +1,5 @@
 import psycopg2
+import random
 import sys
 
 try:
@@ -10,6 +11,7 @@ cur = conn.cursor()
 
 loginvar = 0
 provar = 0
+current_user = ''
 
 def login(uname, passwd):
 	global loginvar, provar
@@ -20,6 +22,7 @@ def login(uname, passwd):
 	try:
 		cur.fetchone()[0]
 		loginvar = 1
+		current_user = uname
 		print "You have been logged in!"
 		cur.execute(prouserq %(uname))
 		try:
@@ -31,7 +34,7 @@ def login(uname, passwd):
 	except:
 		print "Invalid username/password. Please try again."
 
-	print provar
+	# print provar
 
 
 def logout():
@@ -41,6 +44,7 @@ def logout():
 	else:
 		loginvar = 0
 		provar = 0
+		current_user = ''
 		print "You have successfully logged out."
 
 def signup(new_email, new_uname, new_passwd):
@@ -48,8 +52,25 @@ def signup(new_email, new_uname, new_passwd):
 	cur.execute(addUsrPassq % (new_uname, new_passwd, new_email))
 	conn.commit()
 
+def buy_secret(secretID):
+	#Things to do in this function:
+	#	Subtract the secret's "price" out of current_user's digital wallet
+	#		Ask user the wallet out of which they'd like to pay
+	#	Add the secret's price to its owner's digital wallet
+	#	Update buysecret with user's info and secretID
+	#	Ask user to fill out info for how they'd like the secret to be delivered.
+	#		Check to see if by some divine intervention our makeID() is already taken
+	#		Reroll if necessary.
+	#	Update deliver table.
 
-	
+def sell_secret(price, encryptInfo, description):
+	#Things to do in this function
+	#	Update pSell, Sellings
+	#	Update the secretPosting table with args
+
+
+def makeID():
+	return random.randint(0,2147483647)
 
 if __name__ == '__main__':
 	while(1):
