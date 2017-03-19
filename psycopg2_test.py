@@ -74,6 +74,7 @@ def buy_secret(secretID):
 	get_owner_dwID = """SELECT "dwID" FROM "pSell" WHERE "sID"=%d;"""
 	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
 	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
+	update_buysecret = """INSERT INTO "buysecret" ("sID","dwID","username") VALUES (%d,%d,'{%s}');"""
 	
 	cur.execute(get_secretInfo % secretID)
 	try:
@@ -125,7 +126,8 @@ def buy_secret(secretID):
 				pass
 
 			# Update the buysecret table
-			
+			cur.execute(update_buysecret % (secretID, wallet_to_use, current_user))
+			conn.commit()
 			
 		else:
 			print "You don't have enough money in this wallet."
