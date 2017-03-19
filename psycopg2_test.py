@@ -116,12 +116,14 @@ def buy_secret(secretID):
 			# Remove btc from our wallet
 			new_btc = btc - secretInfo[0]
 			cur.execute(update_Bitcoin % (new_btc, wallet_to_use))
+			conn.commit()
 
 			# Add btc to owner's wallet
 			cur.execute(get_Bitcoin % owner_dwID)
 			try:
 				owner_new_btc = btc + cur.fetchone()[0]
 				cur.execute(update_Bitcoin % (owner_new_btc, owner_dwID))
+				conn.commit()
 			except:
 				pass
 
