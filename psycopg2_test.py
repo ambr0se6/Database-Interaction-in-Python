@@ -147,18 +147,26 @@ def buy_secret(secretID):
 def sell_secret(price, encryptInfo, description):
 	update_Sellings = """INSERT INTO "Sellings" VALUES (%d);"""
 	update_pSell = """ INSERT INTO "pSell" VALUES (%d,%d,'{%s}',%d);"""
-	update_secretPosting = """  """
+	update_secretPosting = """INSERT INTO "secretPosting" VALUES (%d, %d, %s, '{%s}');"""
 	#Things to do in this function
 	#	Update pSell, Sellings
 	#	Update the secretPosting table with args
 	if (provar==0):
 		print "I'm sorry, but you are unable to sell secrets.\n Please become a pro user to do so."
 	else:
-		# Update Sellings --> sellID
+		my_sellID = makeID()
+		my_sID = makeID()
 		# Update pSell --> sID, dwID, username, sellID
+
+
 		# Update secretPosting --> sID, [[args]]
 
+		# Update Sellings --> sellID
+		cur.execute(update_Sellings % my_sellID)
+		conn.commit()
 
+# INSERT INTO "secretPosting" VALUES (200,10.75,'Buy this secret to find out the identity of the spiciest memelord!','{Who is the spiciest memelord?}');
+# encryptInfo is the long one, description is a sentence.
 if __name__ == '__main__':
 	while(1):
 		#### We need to fix this--it asks 'login or signup' every time
