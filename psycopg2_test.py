@@ -13,6 +13,10 @@ loginvar = 0
 provar = 0
 current_user = ''
 
+def getID(table, column):
+    latestID = """SELECT MAX(%s) FROM %s """
+	return latestID
+	
 def makeID():
 	return random.randint(0,2147483647)
 
@@ -50,9 +54,15 @@ def logout():
 		current_user = ''
 		print "You have successfully logged out."
 
-def signup(new_email, new_uname, new_passwd):
-	addUsrPassq = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}'); """
-	cur.execute(addUsrPassq % (new_uname, new_passwd, new_email))
+def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
+	#Queries
+	addUsr = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}'); """
+	addProUsr = """ INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', '{%s}')"""
+	
+	if(proUser_yOrN==1):
+    		
+	cur.execute(addUsr % (new_uname, new_passwd, new_email))
+
 	conn.commit()
 
 def buy_secret(secretID):
@@ -75,6 +85,8 @@ def buy_secret(secretID):
 	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
 	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
 	update_buysecret = """INSERT INTO "buysecret" ("sID","dwID","username") VALUES (%d,%d,'{%s}');"""
+
+
 	
 	cur.execute(get_secretInfo % secretID)
 	try:
