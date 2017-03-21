@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
 			elif(loginvar==1):
 				# buy_secret(6)
-				buy_secret(807127824)
+				# buy_secret(807127824)
 				# sell_secret(2000, "Buy our secret to find out the identity of the spiciest meme lord!", "Who is the spiciest meme lord??")
 				print "Would you like to log out? [y/n]"
 				ans = raw_input()
