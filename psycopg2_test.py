@@ -147,7 +147,7 @@ def buy_secret(secretID):
 def sell_secret(price, encryptInfo, description):
 	update_Sellings = """INSERT INTO "Sellings" VALUES (%d);"""
 	update_pSell = """ INSERT INTO "pSell" VALUES (%d,%d,'{%s}',%d);"""
-	update_secretPosting = """INSERT INTO "secretPosting" VALUES (%d, %d, %s, '{%s}');"""
+	update_secretPosting = """INSERT INTO "secretPosting" VALUES (%d, %d, '%s', '{%s}');"""
 	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
 	#Things to do in this function
 	#	Update pSell, Sellings
@@ -163,6 +163,10 @@ def sell_secret(price, encryptInfo, description):
 		except:
 			print "Your digital wallet could not be found!"
 
+		# Update secretPosting --> sID, [[args]]
+		cur.execute(update_secretPosting % (my_sID, price, encryptInfo, description))
+		conn.commit()
+
 		# Update Sellings --> sellID
 		cur.execute(update_Sellings % my_sellID)
 		conn.commit()
@@ -171,9 +175,7 @@ def sell_secret(price, encryptInfo, description):
 		cur.execute(update_pSell % (my_sID, my_dwID, current_user, my_sellID))
 		conn.commit()
 
-		# Update secretPosting --> sID, [[args]]
-		cur.execute(update_secretPosting % (my_sID, price, encryptInfo, description))
-		conn.commit()
+		print "Your listing has been posted!"
 
 
 # INSERT INTO "secretPosting" VALUES (200,10.75,'Buy this secret to find out the identity of the spiciest memelord!','{Who is the spiciest memelord?}');
@@ -195,6 +197,7 @@ if __name__ == '__main__':
 
 			elif(loginvar==1):
 				# buy_secret(6)
+				sell_secret(2000, "Buy our secret to find out the identity of the spiciest meme lord!", "Who is the spiciest meme lord??")
 				print "Would you like to log out? [y/n]"
 				ans = raw_input()
 				if ans=='y':
