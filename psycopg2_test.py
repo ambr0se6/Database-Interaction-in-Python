@@ -70,7 +70,7 @@ def buy_secret(secretID):
 	owner_dwID = ''
 	secretInfo = []
 	now = dt.datetime.now()
-	yyyy_mm_dd = now.isocalendar()
+	yyyy_mm_dd = str(now.isocalendar())
 	# Our Queries
 	get_secretInfo = """SELECT "price","description" FROM "secretPosting" WHERE "sID"=%d;"""
 	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
@@ -78,7 +78,7 @@ def buy_secret(secretID):
 	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
 	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
 	update_buysecret = """INSERT INTO "buysecret" ("sID","dwID","username") VALUES (%d,%d,'{%s}');"""
-	update_transaction = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES (%d,%d,%s,%s);"""
+	update_transaction = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES (%d,%d,(TIMESTAMP %s),%s);"""
 
 	cur.execute(get_secretInfo % secretID)
 	try:
@@ -123,12 +123,16 @@ def buy_secret(secretID):
 				pass
 
 			# Update the transaction table
-			user_tID = makeID()
-			owner_tID = makeID()
-			cur.execute(update_transaction % (user_tID, btc, yyyy_mm_dd, "withdraw"))
-			conn.commit()
-			cur.execute(update_transaction % (owner_tID, btc, yyyy_mm_dd, "deposit"))
-			conn.commit()
+			try:
+				user_tID = makeID()
+				owner_tID = makeID()
+				cur.execute(update_transaction % (user_tID, btc, yyyy_mm_dd, "withdraw"))
+				conn.commit()
+				cur.execute(update_transaction % (owner_tID, btc, yyyy_mm_dd, "deposit"))
+				conn.commit()
+			except:
+				print "Error updating the transaction table."
+
 			# Update the buysecret table
 			cur.execute(update_buysecret % (secretID, myWallet, current_user))
 			conn.commit()
@@ -190,6 +194,7 @@ if __name__ == '__main__':
 
 			elif(loginvar==1):
 				# buy_secret(6)
+				buy_secret(807127824)
 				# sell_secret(2000, "Buy our secret to find out the identity of the spiciest meme lord!", "Who is the spiciest meme lord??")
 				print "Would you like to log out? [y/n]"
 				ans = raw_input()
