@@ -144,10 +144,20 @@ def buy_secret(secretID):
 		print "Please choose a valid wallet."
 
 
-# def sell_secret(price, encryptInfo, description):
-# 	#Things to do in this function
-# 	#	Update pSell, Sellings
-# 	#	Update the secretPosting table with args
+def sell_secret(price, encryptInfo, description):
+	update_Sellings = """INSERT INTO "Sellings" VALUES (%d);"""
+	update_pSell = """ INSERT INTO "pSell" VALUES (%d,%d,'{%s}',%d);"""
+	update_secretPosting = """  """
+	#Things to do in this function
+	#	Update pSell, Sellings
+	#	Update the secretPosting table with args
+	if (provar==0):
+		print "I'm sorry, but you are unable to sell secrets.\n Please become a pro user to do so."
+	else:
+		# Update Sellings --> sellID
+		# Update pSell --> sID, dwID, username, sellID
+		# Update secretPosting --> sID, [[args]]
+
 
 if __name__ == '__main__':
 	while(1):
