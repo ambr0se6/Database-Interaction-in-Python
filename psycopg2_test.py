@@ -17,7 +17,7 @@ def makeID():
 	return random.randint(0,2147483647)
 
 def login(uname, passwd):
-	global loginvar, provar
+	global loginvar, provar, current_user
 	userpasswordq = """SELECT * FROM "User" WHERE username='{%s}' AND password='{%s}';"""
 	prouserq = """SELECT * FROM "prouser" WHERE username='{%s}';"""
 
@@ -74,6 +74,7 @@ def buy_secret(secretID):
 	get_owner_dwID = """SELECT "dwID" FROM "pSell" WHERE "sID"=%d;"""
 	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
 	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
+	update_buysecret = """INSERT INTO "buysecret" ("sID","dwID","username") VALUES (%d,%d,'{%s}');"""
 	
 	cur.execute(get_secretInfo % secretID)
 	try:
@@ -92,15 +93,19 @@ def buy_secret(secretID):
 
 	cur.execute(get_dwIDs % current_user)
 	try:
-		myWallets = cur.fetchall()
+		print current_user
+		myWallets_fetchall = cur.fetchall()
 	except:
 		print "Oops! You don't have any digital wallets."
 
+	for item in myWallets_fetchall:
+		myWallets.append(item[0])
+
 	print "Which wallet would you like to use? "
 	for wallet in myWallets:
-		print wallet
+		print "dwID: %d" % wallet
 
-	wallet_to_use = raw_input()
+	wallet_to_use = int(raw_input())
 
 	if wallet_to_use in myWallets:
 		cur.execute(get_Bitcoin % wallet_to_use)
@@ -115,29 +120,39 @@ def buy_secret(secretID):
 			# Remove btc from our wallet
 			new_btc = btc - secretInfo[0]
 			cur.execute(update_Bitcoin % (new_btc, wallet_to_use))
+			conn.commit()
 
 			# Add btc to owner's wallet
 			cur.execute(get_Bitcoin % owner_dwID)
 			try:
 				owner_new_btc = btc + cur.fetchone()[0]
 				cur.execute(update_Bitcoin % (owner_new_btc, owner_dwID))
+				conn.commit()
 			except:
 				pass
 
 			# Update the buysecret table
-			
+			cur.execute(update_buysecret % (secretID, wallet_to_use, current_user))
+			conn.commit()
+
+			print "Purchase successful!"
 			
 		else:
 			print "You don't have enough money in this wallet."
 
+	else:
+		print "Please choose a valid wallet."
 
-def sell_secret(price, encryptInfo, description):
-	#Things to do in this function
-	#	Update pSell, Sellings
-	#	Update the secretPosting table with args
+
+# def sell_secret(price, encryptInfo, description):
+# 	#Things to do in this function
+# 	#	Update pSell, Sellings
+# 	#	Update the secretPosting table with args
 
 if __name__ == '__main__':
 	while(1):
+		#### We need to fix this--it asks 'login or signup' every time
+		#### We'll fix this later; for testing just know you have to enter 'login' multiple times
 		print "Choose Login or Signup:"
 		choice = raw_input()
 		if(choice == "Login"):
@@ -150,6 +165,7 @@ if __name__ == '__main__':
 
 
 			elif(loginvar==1):
+				# buy_secret(6)
 				print "Would you like to log out? [y/n]"
 				ans = raw_input()
 				if ans=='y':
