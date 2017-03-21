@@ -148,6 +148,7 @@ def sell_secret(price, encryptInfo, description):
 	update_Sellings = """INSERT INTO "Sellings" VALUES (%d);"""
 	update_pSell = """ INSERT INTO "pSell" VALUES (%d,%d,'{%s}',%d);"""
 	update_secretPosting = """INSERT INTO "secretPosting" VALUES (%d, %d, %s, '{%s}');"""
+	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
 	#Things to do in this function
 	#	Update pSell, Sellings
 	#	Update the secretPosting table with args
@@ -156,14 +157,24 @@ def sell_secret(price, encryptInfo, description):
 	else:
 		my_sellID = makeID()
 		my_sID = makeID()
-		# Update pSell --> sID, dwID, username, sellID
-
-
-		# Update secretPosting --> sID, [[args]]
+		cur.execute(get_dwID % current_user)
+		try:
+			my_dwID = cur.fetchone()[0]
+		except:
+			print "Your digital wallet could not be found!"
 
 		# Update Sellings --> sellID
 		cur.execute(update_Sellings % my_sellID)
 		conn.commit()
+
+		# Update pSell --> sID, dwID, username, sellID
+		cur.execute(update_pSell % (my_sID, my_dwID, current_user, my_sellID))
+		conn.commit()
+
+		# Update secretPosting --> sID, [[args]]
+		cur.execute(update_secretPosting % (my_sID, price, encryptInfo, description))
+		conn.commit()
+
 
 # INSERT INTO "secretPosting" VALUES (200,10.75,'Buy this secret to find out the identity of the spiciest memelord!','{Who is the spiciest memelord?}');
 # encryptInfo is the long one, description is a sentence.
