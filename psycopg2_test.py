@@ -70,7 +70,7 @@ def buy_secret(secretID):
 	secretInfo = []
 	# Our Queries
 	get_secretInfo = """SELECT "price","description" FROM "secretPosting" WHERE "sID"=%d;"""
-	get_dwIDs = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
+	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
 	get_owner_dwID = """SELECT "dwID" FROM "pSell" WHERE "sID"=%d;"""
 	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
 	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
@@ -79,36 +79,23 @@ def buy_secret(secretID):
 	cur.execute(get_secretInfo % secretID)
 	try:
 		secretInfo = cur.fetchone()
-	except:
-		print "No such secret"
 
-	print "Price: %d" % (secretInfo[0])
-	print "Description: %s" % (secretInfo[1])
+		print "Price: %d" % (secretInfo[0])
+		print "Description: %s" % (secretInfo[1])
 
-	cur.execute(get_owner_dwID % secretID)
-	try:
-		owner_dwID = cur.fetchone()[0]
-	except:
-		pass
+		cur.execute(get_owner_dwID % secretID)
+		try:
+			owner_dwID = cur.fetchone()[0]
+		except:
+			pass
 
-	cur.execute(get_dwIDs % current_user)
-	try:
-		print current_user
-		myWallets_fetchall = cur.fetchall()
-	except:
-		print "Oops! You don't have any digital wallets."
+		cur.execute(get_dwID % current_user)
+		try:
+			myWallet = cur.fetchone()[0]
+		except:
+			print "Oops! Your digital wallet could not be loaded."
 
-	for item in myWallets_fetchall:
-		myWallets.append(item[0])
-
-	print "Which wallet would you like to use? "
-	for wallet in myWallets:
-		print "dwID: %d" % wallet
-
-	wallet_to_use = int(raw_input())
-
-	if wallet_to_use in myWallets:
-		cur.execute(get_Bitcoin % wallet_to_use)
+		cur.execute(get_Bitcoin % myWallet)
 		btc = 0
 		
 		try:
@@ -116,10 +103,10 @@ def buy_secret(secretID):
 		except:
 			print "You don't seem to have any money in this wallet."
 
-		if btc > secretInfo[0]:
+		if btc > secretInfo[0]:		# Check that the user has enough money
 			# Remove btc from our wallet
 			new_btc = btc - secretInfo[0]
-			cur.execute(update_Bitcoin % (new_btc, wallet_to_use))
+			cur.execute(update_Bitcoin % (new_btc, myWallet))
 			conn.commit()
 
 			# Add btc to owner's wallet
@@ -132,17 +119,15 @@ def buy_secret(secretID):
 				pass
 
 			# Update the buysecret table
-			cur.execute(update_buysecret % (secretID, wallet_to_use, current_user))
+			cur.execute(update_buysecret % (secretID, myWallet, current_user))
 			conn.commit()
 
 			print "Purchase successful!"
-			
+				
 		else:
-			print "You don't have enough money in this wallet."
-
-	else:
-		print "Please choose a valid wallet."
-
+			print "Oops! You don't have enough money."
+	except:
+		print "No such secret"
 
 # def sell_secret(price, encryptInfo, description):
 # 	#Things to do in this function
