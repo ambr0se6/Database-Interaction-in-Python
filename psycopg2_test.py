@@ -14,9 +14,13 @@ provar = 0
 current_user = ''
 
 def getID(table, column):
-    latestID = """SELECT MAX(%s) FROM %s """
-	return latestID
+	try:
+    	latestID = """SELECT MAX(%s) FROM %s """
+		return latestID
+	except: 
+		return 1
 	
+
 def makeID():
 	return random.randint(0,2147483647)
 
@@ -57,13 +61,24 @@ def logout():
 def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 	#Queries
 	addUsr = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}'); """
-	addProUsr = """ INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', '{%s}')"""
+	addProUsr = """INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', '{%s}')"""
+	addBank = """INSERT INTO "Account" ("accountNumber", "bankName") VALUES ('{%s}', '{%s}') """
+	ProUsrPayment = """INSERT INTO "" """
+	newID = getID("Account","accountNumber")
 	
-	if(proUser_yOrN==1):
-    		
 	cur.execute(addUsr % (new_uname, new_passwd, new_email))
-
 	conn.commit()
+
+	cur.execute(addBank % ((newID+1), bank_name))
+	conn.commit()
+
+	if(proUser_yOrN==1):
+		cur.execute(addProUsr % (new_uname, "0"))
+		conn.commit()
+	else:
+		
+
+	
 
 def buy_secret(secretID):
 	#Things to do in this function:
