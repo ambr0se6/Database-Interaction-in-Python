@@ -1,6 +1,7 @@
 import psycopg2
 import random
 import sys
+import datetime as dt
 
 try:
 	conn = psycopg2.connect("dbname='cs421' user='cs421g29' host='comp421.cs.mcgill.ca' password='ChickenNugge1s'")
@@ -68,6 +69,8 @@ def buy_secret(secretID):
 	myWallets = []
 	owner_dwID = ''
 	secretInfo = []
+	now = dt.datetime.now()
+	yyyy_mm_dd = now.isocalendar()
 	# Our Queries
 	get_secretInfo = """SELECT "price","description" FROM "secretPosting" WHERE "sID"=%d;"""
 	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
@@ -75,7 +78,8 @@ def buy_secret(secretID):
 	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
 	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
 	update_buysecret = """INSERT INTO "buysecret" ("sID","dwID","username") VALUES (%d,%d,'{%s}');"""
-	
+	update_transaction = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES (%d,%d,%s,%s);"""
+
 	cur.execute(get_secretInfo % secretID)
 	try:
 		secretInfo = cur.fetchone()
@@ -118,6 +122,13 @@ def buy_secret(secretID):
 			except:
 				pass
 
+			# Update the transaction table
+			user_tID = makeID()
+			owner_tID = makeID()
+			cur.execute(update_transaction % (user_tID, btc, yyyy_mm_dd, "withdraw"))
+			conn.commit()
+			cur.execute(update_transaction % (owner_tID, btc, yyyy_mm_dd, "deposit"))
+			conn.commit()
 			# Update the buysecret table
 			cur.execute(update_buysecret % (secretID, myWallet, current_user))
 			conn.commit()
