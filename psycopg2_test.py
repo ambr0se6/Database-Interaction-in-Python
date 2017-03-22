@@ -15,7 +15,7 @@ current_user = ''
 
 def getID(table, column):
 	try:
-    	latestID = """SELECT MAX(%s) FROM %s """
+    	latestID = """SELECT MAX(%s) FROM %s ;"""
 		return latestID
 	except: 
 		return 1
@@ -61,22 +61,43 @@ def logout():
 def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 	#Queries
 	addUsr = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}'); """
-	addProUsr = """INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', '{%s}')"""
-	addBank = """INSERT INTO "Account" ("accountNumber", "bankName") VALUES ('{%s}', '{%s}') """
-	ProUsrPayment = """INSERT INTO "" """
-	newID = getID("Account","accountNumber")
-	
-	cur.execute(addUsr % (new_uname, new_passwd, new_email))
-	conn.commit()
+	addProUsr = """INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', '%s'); """
+	addBank = """INSERT INTO "Account" ("accountNumber", "bankName") VALUES (%d, '{%s}'); """
+	setupDW = """INSERT INTO "DigitalWallet" ("dwID", "Bitcoin") VALUES (%d, %d)"""
+	transferProUsrPayment = """INSERT INTO "transfers" ("accountNumber", "dwID", "TransID") VALUES (%d, %d, %d)"""
+	ProUsrPayment = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES ('{%s}', %d, '{%s}', '{%s}'); """
+	updateDigitalWallet = """UPDATE "DigitalWallet" SET Bitcoin=%d WHERE dwID=%d """
+	#Getters
+	newDwID = getID("DigitalWallet", "dwID")
+	newAccountNumber = getID("Account","accountNumber")
+	newTransactionID = getID("transaction","TransID")
 
-	cur.execute(addBank % ((newID+1), bank_name))
-	conn.commit()
+	#Actual Setup 
+	cur.execute(addUsr % (new_uname, new_passwd, new_email))
+	conn.commit()#create the user
+
+	cur.execute(addBank % ((newAccountNumber+1), bank_name))
+	conn.commit()#create the Account
+
+	cur.execute(setupDW % (newDwID, 0))
+	conn.commit()#create the DigitalWallet
 
 	if(proUser_yOrN==1):
 		cur.execute(addProUsr % (new_uname, "0"))
-		conn.commit()
-	else:
-		
+		conn.commit()#add user to pro user table
+
+		cur.execute(updateDigitalWallet % (newDwID, (-10))
+		conn.commit()#charge digitalWallet for payment 
+
+		print "Would you like to pay [NOW] or [LATER] ?"
+		answer = raw_input()
+		if(answer="NOW"):
+    		cur.execute(transferProUsrPayment % (newAccountNumber, newDwID, newTransactionID))
+    		conn.commit()#acknowledge a transfer for the ProUsrPayment
+
+			cur.execute()
+
+
 
 	
 
