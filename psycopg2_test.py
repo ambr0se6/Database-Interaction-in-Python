@@ -119,7 +119,7 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 			cur.execute(transferProUsrPayment % (newAccountNumber, newDwID, newTransactionID))
 			conn.commit()#acknowledge a transfer for the ProUsrPayment
 
-			cur.execute(updateDigitalWallet % (newDwID, 0))
+			cur.execute(updateDigitalWallet % (0, newDwID))
 			conn.commit()#update digital wallet
 		
 		print "Your account "
