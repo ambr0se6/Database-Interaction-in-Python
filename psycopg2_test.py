@@ -25,8 +25,9 @@ def getID(table, column):
 		return 1
 
 def getDate():
-	i = dt.datetime.now()
-	date = (i.year-i.month-i.day)
+	date = dt.datetime.now().strftime('%Y-%m-%d')
+	# i = dt.datetime.now()
+	# date = "%d-%02d-%02d" % (i.year,i.month,i.day)
 	return date
 
 def login(uname, passwd):
@@ -120,10 +121,9 @@ def buy_secret(secretID):
 	#		Reroll if necessary.
 	#	Update deliver table.
 	myWallets = []
-	owner_dwID = ''
+	owner_dwID = 0
 	secretInfo = []
-	now = dt.datetime.now()
-	yyyy_mm_dd = str(now.isocalendar())
+	yyyy_mm_dd = getDate()
 	# Our Queries
 	get_secretInfo = """SELECT "price","description" FROM "secretPosting" WHERE "sID"=%d;"""
 	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
@@ -131,71 +131,72 @@ def buy_secret(secretID):
 	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
 	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
 	update_buysecret = """INSERT INTO "buysecret" ("sID","dwID","username") VALUES (%d,%d,'{%s}');"""
-	update_transaction = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES (%d,%d,(TIMESTAMP %s),%s);"""
+	update_transaction = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES (%d,%d,'%s','%s');"""
 
 	cur.execute(get_secretInfo % secretID)
+	# try:
+	secretInfo = cur.fetchone()
+
+	print "Price: %d" % (secretInfo[0])
+	print "Description: %s" % (secretInfo[1])
+
+	cur.execute(get_owner_dwID % secretID)
 	try:
-		secretInfo = cur.fetchone()
+		owner_dwID = int(cur.fetchone()[0])
+	except:
+		pass
 
-		print "Price: %d" % (secretInfo[0])
-		print "Description: %s" % (secretInfo[1])
+	cur.execute(get_dwID % current_user)
+	try:
+		myWallet = int(cur.fetchone()[0])
+	except:
+		print "Oops! Your digital wallet could not be loaded."
 
-		cur.execute(get_owner_dwID % secretID)
+	cur.execute(get_Bitcoin % myWallet)
+	btc = 0
+	
+	try:
+		btc = int(cur.fetchone()[0])
+	except:
+		print "You don't seem to have any money in this wallet."
+
+	if btc > secretInfo[0]:		# Check that the user has enough money
+		# Remove btc from our wallet
+		new_btc = btc - secretInfo[0]
+		cur.execute(update_Bitcoin % (new_btc, myWallet))
+		conn.commit()
+
+		# Add btc to owner's wallet
+		cur.execute(get_Bitcoin % owner_dwID)
 		try:
-			owner_dwID = cur.fetchone()[0]
+			owner_new_btc = btc + cur.fetchone()[0]
+			cur.execute(update_Bitcoin % (owner_new_btc, owner_dwID))
+			conn.commit()
 		except:
 			pass
 
-		cur.execute(get_dwID % current_user)
-		try:
-			myWallet = cur.fetchone()[0]
-		except:
-			print "Oops! Your digital wallet could not be loaded."
+		# Update the transaction table
+		# try:
+		user_tID = int(getID("Transaction","TransID")+1)
+		owner_tID = getID("Transaction","TransID")+1
+		print(update_transaction % (user_tID, secretInfo[0], str(yyyy_mm_dd), 'withdraw'))
+		cur.execute(update_transaction % (user_tID, secretInfo[0], str(yyyy_mm_dd), 'withdraw'))
+		conn.commit()
+		cur.execute(update_transaction % (owner_tID, secretInfo[0], yyyy_mm_dd, 'deposit'))
+		conn.commit()
+		# except:
+		# 	print "Error updating the transaction table."
 
-		cur.execute(get_Bitcoin % myWallet)
-		btc = 0
-		
-		try:
-			btc = cur.fetchone()[0]
-		except:
-			print "You don't seem to have any money in this wallet."
+		# Update the buysecret table
+		cur.execute(update_buysecret % (secretID, myWallet, current_user))
+		conn.commit()
 
-		if btc > secretInfo[0]:		# Check that the user has enough money
-			# Remove btc from our wallet
-			new_btc = btc - secretInfo[0]
-			cur.execute(update_Bitcoin % (new_btc, myWallet))
-			conn.commit()
-
-			# Add btc to owner's wallet
-			cur.execute(get_Bitcoin % owner_dwID)
-			try:
-				owner_new_btc = btc + cur.fetchone()[0]
-				cur.execute(update_Bitcoin % (owner_new_btc, owner_dwID))
-				conn.commit()
-			except:
-				pass
-
-			# Update the transaction table
-			try:
-				user_tID = getID("Transaction","TransID")
-				owner_tID = getID("Transaction","TransID")
-				cur.execute(update_transaction % (user_tID, btc, yyyy_mm_dd, "withdraw"))
-				conn.commit()
-				cur.execute(update_transaction % (owner_tID, btc, yyyy_mm_dd, "deposit"))
-				conn.commit()
-			except:
-				print "Error updating the transaction table."
-
-			# Update the buysecret table
-			cur.execute(update_buysecret % (secretID, myWallet, current_user))
-			conn.commit()
-
-			print "Purchase successful!"
-				
-		else:
-			print "Oops! You don't have enough money."
-	except:
-		print "No such secret"
+		print "Purchase successful!"
+			
+	else:
+		print "Oops! You don't have enough money."
+	# except:
+	# 	print "No such secret"
 
 def sell_secret(price, encryptInfo, description):
 	update_Sellings = """INSERT INTO "Sellings" VALUES (%d);"""
@@ -208,8 +209,8 @@ def sell_secret(price, encryptInfo, description):
 	if (provar==0):
 		print "I'm sorry, but you are unable to sell secrets.\n Please become a pro user to do so."
 	else:
-		my_sellID = makeID()
-		my_sID = makeID()
+		my_sellID = makeID("Sellings","sellID")
+		my_sID = makeID("secretPosting","sID")
 		cur.execute(get_dwID % current_user)
 		try:
 			my_dwID = cur.fetchone()[0]
@@ -231,7 +232,7 @@ def sell_secret(price, encryptInfo, description):
                 
 if __name__ == '__main__':
 	check_wallet_query = """"""
-	display_secrets_query = """SELECT "sID","description" FROM "secretPosting";"""
+	display_secrets_query = """SELECT "sID","description","price" FROM "secretPosting";"""
 
 	while(1):
 		if(loginvar==0):
@@ -285,19 +286,27 @@ if __name__ == '__main__':
 				cur.execute(display_secrets_query)
 				try:
 					avail_secrets = cur.fetchall()
-					print '%-15s' '%s' % ("Secret ID","Description")
+					print '%-15s' '%-45s' '%s' % ("Secret ID","Description","Price")
 				except:
 					print "Error: Could not load secrets."
 				for item in avail_secrets:
-					print '%-15s' '%s' % (str(item[0]), str(item[1]))
+					print '%-15s' '%-45s' '%s' % (str(item[0]), str(item[1]), str(item[2]))
 				print "Please enter the ID for the secret you'd like to purchase:"
 
-				sID_to_buy = raw_input()
+				sID_to_buy = int(raw_input())
 
+				buy_secret(sID_to_buy)
 
+			elif(ans=="sell secret"):
+				print "Please write the secret below:"
+				my_encryptinfo = raw_input()
+				print "Please give a brief description of the secret:"
+				my_desc = raw_input()
+				print "Please enter a price for your secret:"
+				my_price = raw_input()
 
-			elif(ans=="sell secret" and isPro==1):
-				print "You have sold a secret"
+				sell_secret(float(my_price), my_encryptinfo, '{my_desc}')
+
 			elif(ans=="check wallet"):
 				print "You have X bitcoin"
 			elif(ans=="logout"):
