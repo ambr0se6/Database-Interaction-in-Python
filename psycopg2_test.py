@@ -27,8 +27,6 @@ def getDate():
 	i = dt.datetime.now()
 	date = (i.year-i.month-i.day)
 	return date
-def makeID():
-	return random.randint(0,2147483647)
 
 def login(uname, passwd):
 	global loginvar, provar, current_user
@@ -52,7 +50,6 @@ def login(uname, passwd):
 		print "Invalid username/password. Please try again."
 
 	# print provar
-
 
 def logout():
 	global loginvar, provar
@@ -94,14 +91,14 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 		cur.execute(addProUsr % (new_uname, "0"))
 		conn.commit()#add user to pro user table
 
-		cur.execute(updateDigitalWallet % (-10, newDwID)
+		cur.execute(updateDigitalWallet % (-10, newDwID))
 		conn.commit()#charge digitalWallet for payment 
 
 		print "Would you like to pay [NOW] or [LATER] ?"
 		answer = raw_input()
-		if(answer="NOW"):
-    		cur.execute(transferProUsrPayment % (newAccountNumber, newDwID, newTransactionID))
-    		conn.commit()#acknowledge a transfer for the ProUsrPayment
+		if(answer="NOW"):c
+			cur.execute(transferProUsrPayment % (newAccountNumber, newDwID, newTransactionID))
+			conn.commit()#acknowledge a transfer for the ProUsrPayment
 
 			cur.execute(ProUsrPayment % (newTransactionID, 10, (TIMESTAMP getDate), "withdraw"))
 			conn.commit()#create the payment transaction
@@ -110,7 +107,7 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 			conn.commit()#update digital wallet
 		
 		print "Your account "
-    		
+
 def buy_secret(secretID):
 	#Things to do in this function:
 	#	Subtract the secret's "price" out of current_user's digital wallet
@@ -179,8 +176,8 @@ def buy_secret(secretID):
 
 			# Update the transaction table
 			try:
-				user_tID = makeID()
-				owner_tID = makeID()
+				user_tID = getID("Transaction","TransID")
+				owner_tID = getID("Transaction","TransID")
 				cur.execute(update_transaction % (user_tID, btc, yyyy_mm_dd, "withdraw"))
 				conn.commit()
 				cur.execute(update_transaction % (owner_tID, btc, yyyy_mm_dd, "deposit"))
