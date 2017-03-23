@@ -85,9 +85,7 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 	newDwID = getID("DigitalWallet", "dwID")+1
 	newAccountNumber = getID("Account","accountNumber")+1
 	newTransactionID = getID("transaction","TransID")+1
-	print newDwID
-	print newAccountNumber
-	print newTransactionID
+
 	#Actual Setup 
 	cur.execute(addUsr % (new_uname, new_passwd, new_email))
 	conn.commit()#create the user
@@ -108,22 +106,25 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 		conn.commit()#add user to pro user table
 
 		cur.execute(updateDigitalWallet % (-10, newDwID))
-		conn.commit()#charge digitalWallet for payment 
+		conn.commit()#charge digitalWallet for payment
+		cont = 1
+		while(cont==1):
+			print "\nWould you like to pay [now] or [later] ?"
+			answer = raw_input()
+			if(answer=="now"):
+    				cur.execute(ProUsrPayment % (newTransactionID, 10, getDate(), "withdraw"))
+				conn.commit()#create the payment transaction
 
-		print "Would you like to pay [NOW] or [LATER] ?"
-		answer = raw_input()
-		if(answer=="NOW"):
-    			cur.execute(ProUsrPayment % (newTransactionID, 10, getDate(), "withdraw"))
-			conn.commit()#create the payment transaction
+				cur.execute(transferProUsrPayment % (newAccountNumber, newDwID, newTransactionID))
+				conn.commit()#acknowledge a transfer for the ProUsrPayment
 
-			cur.execute(transferProUsrPayment % (newAccountNumber, newDwID, newTransactionID))
-			conn.commit()#acknowledge a transfer for the ProUsrPayment
-
-			cur.execute(updateDigitalWallet % (0, newDwID))
-			conn.commit()#update digital wallet
-		
-		print "Your account "
-
+				cur.execute(updateDigitalWallet % (0, newDwID))
+				conn.commit()#update digital wallet
+				cont=0
+			elif(answer=="later"):
+					cont=0
+			else: 
+				pass
 def buy_secret(secretID):
 	#Things to do in this function:
 	#	Subtract the secret's "price" out of current_user's digital wallet
