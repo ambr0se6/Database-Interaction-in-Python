@@ -1,7 +1,8 @@
 import psycopg2
 import random
 import sys
-import datetime
+import datetime as dt
+
 
 try:
 	conn = psycopg2.connect("dbname='cs421' user='cs421g29' host='comp421.cs.mcgill.ca' password='ChickenNugge1s'")
@@ -23,7 +24,7 @@ def getID(table, column):
 		return 1
 
 def getDate():
-	i = datetime.datetime.now()
+	i = dt.datetime.now()
 	date = (i.year-i.month-i.day)
 	return date
 def makeID():
@@ -123,49 +124,37 @@ def buy_secret(secretID):
 	myWallets = []
 	owner_dwID = ''
 	secretInfo = []
+	now = dt.datetime.now()
+	yyyy_mm_dd = str(now.isocalendar())
 	# Our Queries
 	get_secretInfo = """SELECT "price","description" FROM "secretPosting" WHERE "sID"=%d;"""
-	get_dwIDs = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
+	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
 	get_owner_dwID = """SELECT "dwID" FROM "pSell" WHERE "sID"=%d;"""
 	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
 	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
 	update_buysecret = """INSERT INTO "buysecret" ("sID","dwID","username") VALUES (%d,%d,'{%s}');"""
+	update_transaction = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES (%d,%d,(TIMESTAMP %s),%s);"""
 
-
-	
 	cur.execute(get_secretInfo % secretID)
 	try:
 		secretInfo = cur.fetchone()
-	except:
-		print "No such secret"
 
-	print "Price: %d" % (secretInfo[0])
-	print "Description: %s" % (secretInfo[1])
+		print "Price: %d" % (secretInfo[0])
+		print "Description: %s" % (secretInfo[1])
 
-	cur.execute(get_owner_dwID % secretID)
-	try:
-		owner_dwID = cur.fetchone()[0]
-	except:
-		pass
+		cur.execute(get_owner_dwID % secretID)
+		try:
+			owner_dwID = cur.fetchone()[0]
+		except:
+			pass
 
-	cur.execute(get_dwIDs % current_user)
-	try:
-		print current_user
-		myWallets_fetchall = cur.fetchall()
-	except:
-		print "Oops! You don't have any digital wallets."
+		cur.execute(get_dwID % current_user)
+		try:
+			myWallet = cur.fetchone()[0]
+		except:
+			print "Oops! Your digital wallet could not be loaded."
 
-	for item in myWallets_fetchall:
-		myWallets.append(item[0])
-
-	print "Which wallet would you like to use? "
-	for wallet in myWallets:
-		print "dwID: %d" % wallet
-
-	wallet_to_use = int(raw_input())
-
-	if wallet_to_use in myWallets:
-		cur.execute(get_Bitcoin % wallet_to_use)
+		cur.execute(get_Bitcoin % myWallet)
 		btc = 0
 		
 		try:
@@ -173,10 +162,10 @@ def buy_secret(secretID):
 		except:
 			print "You don't seem to have any money in this wallet."
 
-		if btc > secretInfo[0]:
+		if btc > secretInfo[0]:		# Check that the user has enough money
 			# Remove btc from our wallet
 			new_btc = btc - secretInfo[0]
-			cur.execute(update_Bitcoin % (new_btc, wallet_to_use))
+			cur.execute(update_Bitcoin % (new_btc, myWallet))
 			conn.commit()
 
 			# Add btc to owner's wallet
@@ -188,33 +177,60 @@ def buy_secret(secretID):
 			except:
 				pass
 
+			# Update the transaction table
+			try:
+				user_tID = makeID()
+				owner_tID = makeID()
+				cur.execute(update_transaction % (user_tID, btc, yyyy_mm_dd, "withdraw"))
+				conn.commit()
+				cur.execute(update_transaction % (owner_tID, btc, yyyy_mm_dd, "deposit"))
+				conn.commit()
+			except:
+				print "Error updating the transaction table."
+
 			# Update the buysecret table
-			cur.execute(update_buysecret % (secretID, wallet_to_use, current_user))
+			cur.execute(update_buysecret % (secretID, myWallet, current_user))
 			conn.commit()
 
 			print "Purchase successful!"
-			
+				
 		else:
-			print "You don't have enough money in this wallet."
-
-	else:
-		print "Please choose a valid wallet."
-
+			print "Oops! You don't have enough money."
+	except:
+		print "No such secret"
 
 def sell_secret(price, encryptInfo, description):
 	update_Sellings = """INSERT INTO "Sellings" VALUES (%d);"""
 	update_pSell = """ INSERT INTO "pSell" VALUES (%d,%d,'{%s}',%d);"""
-	update_secretPosting = """  """
+	update_secretPosting = """INSERT INTO "secretPosting" VALUES (%d, %d, '%s', '{%s}');"""
+	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
 	#Things to do in this function
 	#	Update pSell, Sellings
 	#	Update the secretPosting table with args
 	if (provar==0):
 		print "I'm sorry, but you are unable to sell secrets.\n Please become a pro user to do so."
 	else:
-		# Update Sellings --> sellID
-		# Update pSell --> sID, dwID, username, sellID
-		# Update secretPosting --> sID, [[args]]
+		my_sellID = makeID()
+		my_sID = makeID()
+		cur.execute(get_dwID % current_user)
+		try:
+			my_dwID = cur.fetchone()[0]
+		except:
+			print "Your digital wallet could not be found!"
 
+		# Update secretPosting --> sID, [[args]]
+		cur.execute(update_secretPosting % (my_sID, price, encryptInfo, description))
+		conn.commit()
+
+		# Update Sellings --> sellID
+		cur.execute(update_Sellings % my_sellID)
+		conn.commit()
+
+		# Update pSell --> sID, dwID, username, sellID
+		cur.execute(update_pSell % (my_sID, my_dwID, current_user, my_sellID))
+		conn.commit()
+		print "Your listing has been posted!"
+                
 if __name__ == '__main__':
 	while(1):
 		#### We need to fix this--it asks 'login or signup' every time
@@ -232,6 +248,8 @@ if __name__ == '__main__':
 
 			elif(loginvar==1):
 				# buy_secret(6)
+				# buy_secret(807127824)
+				# sell_secret(2000, "Buy our secret to find out the identity of the spiciest meme lord!", "Who is the spiciest meme lord??")
 				print "Would you like to log out? [y/n]"
 				ans = raw_input()
 				if ans=='y':
