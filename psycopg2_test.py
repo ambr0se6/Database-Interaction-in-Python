@@ -65,7 +65,7 @@ def logout():
 def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 	#Queries
 	addUsr = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}');"""
-	addProUsr = """INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', '%s'); """
+	addProUsr = """INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', %d); """
 	addBank = """INSERT INTO "Account" ("accountNumber", "bankName") VALUES (%d, '{%s}'); """
 	setupDW = """INSERT INTO "DigitalWallet" ("dwID", "Bitcoin") VALUES (%d, %d);"""
 	transferProUsrPayment = """INSERT INTO "transfers" ("accountNumber", "dwID", "TransID") VALUES (%d, %d, %d);"""
@@ -89,7 +89,7 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 	conn.commit()#create the DigitalWallet
 
 	if(proUser_yOrN==1):
-		cur.execute(addProUsr % (new_uname, "0"))
+		cur.execute(addProUsr % (new_uname, 0))
 		conn.commit()#add user to pro user table
 
 		cur.execute(updateDigitalWallet % (-10, newDwID))
@@ -230,46 +230,81 @@ def sell_secret(price, encryptInfo, description):
 		print "Your listing has been posted!"
                 
 if __name__ == '__main__':
+	check_wallet_query = """"""
+	display_secrets_query = """SELECT "sID","description" FROM "secretPosting";"""
+
 	while(1):
-		#### We need to fix this--it asks 'login or signup' every time
-		#### We'll fix this later; for testing just know you have to enter 'login' multiple times
-		print "Choose Login or Signup:"
-		choice = raw_input()
-		if(choice == "Login"):
-			if(loginvar==0):
+		if(loginvar==0):
+			print "Choose Login, Signup, or Exit:"
+
+			choice = raw_input()
+
+			if(choice == "Login"):
 				print "Please enter your username:"
 				username = raw_input()
 				print "Please enter your password:"
 				password = raw_input()
 				login(username,password)
 
+			elif(choice == "Signup"):
+				print "Please enter your email"
+				email = raw_input()
+				print "Please enter your username:"
+				username = raw_input()
+				print "Please enter your password:"
+				password = raw_input()
+				print "Would you like to be a pro user? yes/no"
+				am_pro = raw_input()
+				print "Please enter your bank name:"
+				my_bank = raw_input()
+				if(am_pro=="yes"):
+					signup(email, username, password, 1, my_bank)
+				else:
+					signup(email, username, password, 0, my_bank)
+				login(username,password)
+				print "You are now signed up! Enjoy using the site.\n"
 
-			elif(loginvar==1):
-				# buy_secret(6)
-				# buy_secret(807127824)
-				# sell_secret(2000, "Buy our secret to find out the identity of the spiciest meme lord!", "Who is the spiciest meme lord??")
-				print "Would you like to log out? [y/n]"
-				ans = raw_input()
-				if ans=='y':
-					logout()
-				elif ans=='n':
-					print "Would you like to terminate your session? [y/n]"
-					ans = raw_input()
-					if ans=='y':
-						sys.exit()
+			elif(choice == "Exit"):
+				print "Goodbye!"
+				sys.exit()
 
-		elif(choice == "Signup"):
-			print "Please enter your email"
-			email = raw_input()
-			print "Please enter your username:"
-			username = raw_input()
-			print "Please enter your password:"
-			password = raw_input()
-			print "Would you like to be a pro user? yes/no"
-			am_pro = raw_input()
-			print "Please enter your bank name:"
-			my_bank = raw_input()
-			if(am_pro=="yes"):
-				signup(email, username, password, 1, my_bank)
 			else:
-				signup(email, username, password, 0, my_bank)
+				print "Please input a valid option (remember: options are cAse SenSiTiVe):"
+
+		elif(loginvar==1):
+			print "What would you like to do?"
+			if(provar==0):
+				print "[buy secret][check wallet][logout]"
+			elif(provar==1):
+				print "[buy secret][sell secret][check wallet][logout]"
+
+			ans = raw_input()
+
+			if(ans=="buy secret"):
+				print "Available secrets:"
+				cur.execute(display_secrets_query)
+				try:
+					avail_secrets = cur.fetchall()
+					print '%-15s' '%s' % ("Secret ID","Description")
+				except:
+					print "Error: Could not load secrets."
+				for item in avail_secrets:
+					print '%-15s' '%s' % (str(item[0]), str(item[1]))
+				print "Please enter the ID for the secret you'd like to purchase:"
+
+				sID_to_buy = raw_input()
+
+
+
+			elif(ans=="sell secret" and isPro==1):
+				print "You have sold a secret"
+			elif(ans=="check wallet"):
+				print "You have X bitcoin"
+			elif(ans=="logout"):
+				print "You have logged out"
+				loginvar = 0
+				provar = 0
+				current_user = ''
+			else:
+				print "Please enter a valid input."
+
