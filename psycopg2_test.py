@@ -1,6 +1,7 @@
 import psycopg2
 import random
 import sys
+import datetime
 
 try:
 	conn = psycopg2.connect("dbname='cs421' user='cs421g29' host='comp421.cs.mcgill.ca' password='ChickenNugge1s'")
@@ -14,13 +15,17 @@ provar = 0
 current_user = ''
 
 def getID(table, column):
-	try:
-    	latestID = """SELECT MAX(%s) FROM %s ;"""
+	try: 
+		latestID = """SELECT MAX(%s) FROM %s ;"""
+		cur.execute(latestID % (column, table))
 		return latestID
 	except: 
 		return 1
-	
 
+def getDate():
+	i = datetime.datetime.now()
+	date = (i.year-i.month-i.day)
+	return date
 def makeID():
 	return random.randint(0,2147483647)
 
@@ -63,20 +68,22 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 	addUsr = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}'); """
 	addProUsr = """INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', '%s'); """
 	addBank = """INSERT INTO "Account" ("accountNumber", "bankName") VALUES (%d, '{%s}'); """
-	setupDW = """INSERT INTO "DigitalWallet" ("dwID", "Bitcoin") VALUES (%d, %d)"""
-	transferProUsrPayment = """INSERT INTO "transfers" ("accountNumber", "dwID", "TransID") VALUES (%d, %d, %d)"""
+	setupDW = """INSERT INTO "DigitalWallet" ("dwID", "Bitcoin") VALUES (%d, %d);"""
+	transferProUsrPayment = """INSERT INTO "transfers" ("accountNumber", "dwID", "TransID") VALUES (%d, %d, %d);"""
 	ProUsrPayment = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES ('{%s}', %d, '{%s}', '{%s}'); """
-	updateDigitalWallet = """UPDATE "DigitalWallet" SET Bitcoin=%d WHERE dwID=%d """
+	updateDigitalWallet = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d; """
 	#Getters
-	newDwID = getID("DigitalWallet", "dwID")
-	newAccountNumber = getID("Account","accountNumber")
-	newTransactionID = getID("transaction","TransID")
-
+	newDwID = getID("DigitalWallet", "dwID")+1
+	newAccountNumber = getID("Account","accountNumber")+1
+	newTransactionID = getID("transaction","TransID")+1
+	print newDwID
+	print newAccountNumber
+	print newTransactionID
 	#Actual Setup 
 	cur.execute(addUsr % (new_uname, new_passwd, new_email))
 	conn.commit()#create the user
 
-	cur.execute(addBank % ((newAccountNumber+1), bank_name))
+	cur.execute(addBank % ((newAccountNumber), bank_name))
 	conn.commit()#create the Account
 
 	cur.execute(setupDW % (newDwID, 0))
@@ -86,7 +93,7 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 		cur.execute(addProUsr % (new_uname, "0"))
 		conn.commit()#add user to pro user table
 
-		cur.execute(updateDigitalWallet % (newDwID, (-10))
+		cur.execute(updateDigitalWallet % (-10, newDwID)
 		conn.commit()#charge digitalWallet for payment 
 
 		print "Would you like to pay [NOW] or [LATER] ?"
@@ -95,12 +102,14 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
     		cur.execute(transferProUsrPayment % (newAccountNumber, newDwID, newTransactionID))
     		conn.commit()#acknowledge a transfer for the ProUsrPayment
 
-			cur.execute()
+			cur.execute(ProUsrPayment % (newTransactionID, 10, (TIMESTAMP getDate), "withdraw"))
+			conn.commit()#create the payment transaction
 
-
-
-	
-
+			cur.execute(updateDigitalWallet % (newDwID, 0))
+			conn.commit()#update digital wallet
+		
+		print "Your account "
+    		
 def buy_secret(secretID):
 	#Things to do in this function:
 	#	Subtract the secret's "price" out of current_user's digital wallet
@@ -205,7 +214,6 @@ def sell_secret(price, encryptInfo, description):
 		# Update Sellings --> sellID
 		# Update pSell --> sID, dwID, username, sellID
 		# Update secretPosting --> sID, [[args]]
-
 
 if __name__ == '__main__':
 	while(1):
