@@ -3,6 +3,7 @@ import random
 import sys
 import datetime as dt
 
+
 try:
 	conn = psycopg2.connect("dbname='cs421' user='cs421g29' host='comp421.cs.mcgill.ca' password='ChickenNugge1s'")
 except:
@@ -14,6 +15,18 @@ loginvar = 0
 provar = 0
 current_user = ''
 
+def getID(table, column):
+	try: 
+		latestID = """SELECT MAX(%s) FROM %s ;"""
+		cur.execute(latestID % (column, table))
+		return latestID
+	except: 
+		return 1
+
+def getDate():
+	i = dt.datetime.now()
+	date = (i.year-i.month-i.day)
+	return date
 def makeID():
 	return random.randint(0,2147483647)
 
@@ -51,11 +64,53 @@ def logout():
 		current_user = ''
 		print "You have successfully logged out."
 
-def signup(new_email, new_uname, new_passwd):
-	addUsrPassq = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}'); """
-	cur.execute(addUsrPassq % (new_uname, new_passwd, new_email))
-	conn.commit()
+def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
+	#Queries
+	addUsr = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}'); """
+	addProUsr = """INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', '%s'); """
+	addBank = """INSERT INTO "Account" ("accountNumber", "bankName") VALUES (%d, '{%s}'); """
+	setupDW = """INSERT INTO "DigitalWallet" ("dwID", "Bitcoin") VALUES (%d, %d);"""
+	transferProUsrPayment = """INSERT INTO "transfers" ("accountNumber", "dwID", "TransID") VALUES (%d, %d, %d);"""
+	ProUsrPayment = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES ('{%s}', %d, '{%s}', '{%s}'); """
+	updateDigitalWallet = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d; """
+	#Getters
+	newDwID = getID("DigitalWallet", "dwID")+1
+	newAccountNumber = getID("Account","accountNumber")+1
+	newTransactionID = getID("transaction","TransID")+1
+	print newDwID
+	print newAccountNumber
+	print newTransactionID
+	#Actual Setup 
+	cur.execute(addUsr % (new_uname, new_passwd, new_email))
+	conn.commit()#create the user
 
+	cur.execute(addBank % ((newAccountNumber), bank_name))
+	conn.commit()#create the Account
+
+	cur.execute(setupDW % (newDwID, 0))
+	conn.commit()#create the DigitalWallet
+
+	if(proUser_yOrN==1):
+		cur.execute(addProUsr % (new_uname, "0"))
+		conn.commit()#add user to pro user table
+
+		cur.execute(updateDigitalWallet % (-10, newDwID)
+		conn.commit()#charge digitalWallet for payment 
+
+		print "Would you like to pay [NOW] or [LATER] ?"
+		answer = raw_input()
+		if(answer="NOW"):
+    		cur.execute(transferProUsrPayment % (newAccountNumber, newDwID, newTransactionID))
+    		conn.commit()#acknowledge a transfer for the ProUsrPayment
+
+			cur.execute(ProUsrPayment % (newTransactionID, 10, (TIMESTAMP getDate), "withdraw"))
+			conn.commit()#create the payment transaction
+
+			cur.execute(updateDigitalWallet % (newDwID, 0))
+			conn.commit()#update digital wallet
+		
+		print "Your account "
+    		
 def buy_secret(secretID):
 	#Things to do in this function:
 	#	Subtract the secret's "price" out of current_user's digital wallet
@@ -174,9 +229,8 @@ def sell_secret(price, encryptInfo, description):
 		# Update pSell --> sID, dwID, username, sellID
 		cur.execute(update_pSell % (my_sID, my_dwID, current_user, my_sellID))
 		conn.commit()
-
 		print "Your listing has been posted!"
-
+                
 if __name__ == '__main__':
 	while(1):
 		#### We need to fix this--it asks 'login or signup' every time
