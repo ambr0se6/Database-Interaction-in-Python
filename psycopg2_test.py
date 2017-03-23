@@ -16,10 +16,11 @@ provar = 0
 current_user = ''
 
 def getID(table, column):
-	try: 
-		latestID = """SELECT MAX(%s) FROM %s ;"""
+	try:
+		latestID = """SELECT MAX("%s") FROM "%s";"""
 		cur.execute(latestID % (column, table))
-		return latestID
+		output = int(cur.fetchone()[0])
+		return output
 	except: 
 		return 1
 
@@ -63,12 +64,12 @@ def logout():
 
 def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 	#Queries
-	addUsr = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}'); """
+	addUsr = """INSERT INTO "User" ("username", "password", "email") VALUES ('{%s}', '{%s}', '{%s}');"""
 	addProUsr = """INSERT INTO "prouser" ("username", "Rating") VALUES ('{%s}', '%s'); """
 	addBank = """INSERT INTO "Account" ("accountNumber", "bankName") VALUES (%d, '{%s}'); """
 	setupDW = """INSERT INTO "DigitalWallet" ("dwID", "Bitcoin") VALUES (%d, %d);"""
 	transferProUsrPayment = """INSERT INTO "transfers" ("accountNumber", "dwID", "TransID") VALUES (%d, %d, %d);"""
-	ProUsrPayment = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES ('{%s}', %d, '{%s}', '{%s}'); """
+	ProUsrPayment = """INSERT INTO "transaction" ("TransID","amount","tDate","TransType") VALUES ('{%s}', %d, (TIMESTAMP '{%s}'), '{%s}'); """
 	updateDigitalWallet = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d; """
 	#Getters
 	newDwID = getID("DigitalWallet", "dwID")+1
@@ -96,11 +97,11 @@ def signup(new_email, new_uname, new_passwd, proUser_yOrN, bank_name):
 
 		print "Would you like to pay [NOW] or [LATER] ?"
 		answer = raw_input()
-		if(answer="NOW"):c
+		if(answer=="NOW"):
 			cur.execute(transferProUsrPayment % (newAccountNumber, newDwID, newTransactionID))
 			conn.commit()#acknowledge a transfer for the ProUsrPayment
 
-			cur.execute(ProUsrPayment % (newTransactionID, 10, (TIMESTAMP getDate), "withdraw"))
+			cur.execute(ProUsrPayment % (newTransactionID, 10, getDate, "withdraw"))
 			conn.commit()#create the payment transaction
 
 			cur.execute(updateDigitalWallet % (newDwID, 0))
@@ -264,4 +265,11 @@ if __name__ == '__main__':
 			username = raw_input()
 			print "Please enter your password:"
 			password = raw_input()
-			signup(email, username, password)
+			print "Would you like to be a pro user? yes/no"
+			am_pro = raw_input()
+			print "Please enter your bank name:"
+			my_bank = raw_input()
+			if(am_pro=="yes"):
+				signup(email, username, password, 1, my_bank)
+			else:
+				signup(email, username, password, 0, my_bank)
