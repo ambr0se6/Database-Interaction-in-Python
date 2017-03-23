@@ -258,7 +258,11 @@ if __name__ == '__main__':
 				username = raw_input()
 				print "\nPlease enter your password:"
 				password = raw_input()
-				login(username,password)
+
+				try:
+					login(username,password)
+				except:
+					print "Invalid username/password combination. Please try again."
 
 			elif(choice == "Signup"):
 				print "\nPlease enter your email:"
@@ -272,10 +276,18 @@ if __name__ == '__main__':
 				print "\nPlease enter your bank name:"
 				my_bank = raw_input()
 				if(am_pro=="yes"):
-					signup(email, username, password, 1, my_bank)
+					try:
+						signup(email, username, password, 1, my_bank)
+					except:
+						print "Whoops! Could not sign up. Please try again!"
 				else:
-					signup(email, username, password, 0, my_bank)
-				login(username,password)
+					try:
+						signup(email, username, password, 0, my_bank)
+					except:
+						print "Whoops! Could not sign up. Please try again!"
+
+				login(username,password)	#Assuming username and password will be valid after signing up
+
 				print "\nYou are now signed up! Enjoy using the site."
 
 			elif(choice == "Exit"):
@@ -308,7 +320,10 @@ if __name__ == '__main__':
 
 				sID_to_buy = int(raw_input())
 
-				buy_secret(sID_to_buy)
+				try:
+					buy_secret(sID_to_buy)
+				except:
+					print "Oops, could not find that secret. Please enter another one."
 
 			elif(ans=="sell secret"):
 				print "\nPlease write the secret below:"
@@ -318,7 +333,10 @@ if __name__ == '__main__':
 				print "\nPlease enter a price for your secret:"
 				my_price = raw_input()
 
-				sell_secret(float(my_price), my_encryptinfo, my_desc)
+				try:
+					sell_secret(float(my_price), my_encryptinfo, my_desc)
+				except:
+					print "Whoops! Could not sell your secret. Please try again."
 
 			elif(ans=="check wallet"):
 				print "You have %s bitcoin" % (getBitcoin(username))
