@@ -2,7 +2,7 @@ import psycopg2
 import random
 import sys
 import datetime as dt
-
+#Question 2
 
 try:
 	conn = psycopg2.connect("dbname='cs421' user='cs421g29' host='comp421.cs.mcgill.ca' password='ChickenNugge1s'")
