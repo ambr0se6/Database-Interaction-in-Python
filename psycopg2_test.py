@@ -242,6 +242,33 @@ def sell_secret(price, encryptInfo, description):
 		cur.execute(update_pSell % (my_sID, my_dwID, current_user, my_sellID))
 		conn.commit()
 		print "Your listing has been posted!\n"
+
+def addFunds(amount):
+	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
+	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
+	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
+
+	cur.execute(get_dwID % current_user)
+	try:
+		myWallet = int(cur.fetchone()[0])
+	except:
+		print "Oops! Your digital wallet could not be loaded."
+
+	cur.execute(get_Bitcoin % myWallet)
+	old_btc = 0
+	try:
+		old_btc = int(cur.fetchone()[0])
+	except:
+		pass 	# We don't need to throw an exception, since we can just continue with old_btc=0
+
+	new_btc = old_btc + amount
+
+	try:
+		cur.execute(update_Bitcoin % (new_btc, myWallet))
+		conn.commit()
+	except:
+		print "Oops! could not update your wallet."
+
                 
 if __name__ == '__main__':
 	check_wallet_query = """"""
@@ -300,9 +327,9 @@ if __name__ == '__main__':
 		elif(loginvar==1):
 			print "\nWhat would you like to do?"
 			if(provar==0):
-				print "\n[buy secret][check wallet][logout]"
+				print "\n[buy secret][check wallet][add funds][logout]"
 			elif(provar==1):
-				print "\n[buy secret][sell secret][check wallet][logout]"
+				print "\n[buy secret][sell secret][check wallet][add funds][logout]"
 
 			ans = raw_input()
 
@@ -340,6 +367,15 @@ if __name__ == '__main__':
 
 			elif(ans=="check wallet"):
 				print "You have %s bitcoin" % (getBitcoin(username))
+
+			elif(ans=="add funds"):
+				print "How much money (in Bitcoin) would you like to add?"
+				amt = raw_input()
+				try:
+					addFunds(amt)
+				except:
+					print "Something went wrong; we could not complete the deposit."
+
 			elif(ans=="logout"):
 				print "You have logged out"
 				loginvar = 0
