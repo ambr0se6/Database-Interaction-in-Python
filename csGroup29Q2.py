@@ -261,11 +261,12 @@ def addFunds(amount):
 	except:
 		pass 	# We don't need to throw an exception, since we can just continue with old_btc=0
 
-	new_btc = old_btc + amount
+	new_btc = old_btc + float(amount)
 
 	try:
 		cur.execute(update_Bitcoin % (new_btc, myWallet))
 		conn.commit()
+		print "Wallet updated!"
 	except:
 		print "Oops! could not update your wallet."
 
