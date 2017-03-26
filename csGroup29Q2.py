@@ -247,22 +247,23 @@ def addFunds(amount):
 	get_dwID = """SELECT "dwID" FROM "Owns" WHERE "username"='{%s}';"""
 	get_Bitcoin = """SELECT "Bitcoin" FROM "DigitalWallet" WHERE "dwID"=%d; """
 	update_Bitcoin = """UPDATE "DigitalWallet" SET "Bitcoin"=%d WHERE "dwID"=%d;"""
-
-	cur.execute(get_dwID % current_user)
+	print amount 
+	
 	try:
+		cur.execute(get_dwID % current_user)
 		myWallet = int(cur.fetchone()[0])
 	except:
 		print "Oops! Your digital wallet could not be loaded."
 
-	cur.execute(get_Bitcoin % myWallet)
-	old_btc = 0
 	try:
+		cur.execute(get_Bitcoin % myWallet)
+		old_btc = 0
 		old_btc = int(cur.fetchone()[0])
 	except:
 		pass 	# We don't need to throw an exception, since we can just continue with old_btc=0
 
 	new_btc = old_btc + amount
-
+	print new_btc
 	try:
 		cur.execute(update_Bitcoin % (new_btc, myWallet))
 		conn.commit()
@@ -383,4 +384,3 @@ if __name__ == '__main__':
 				current_user = ''
 			else:
 				print "\nPlease enter a valid input."
-
